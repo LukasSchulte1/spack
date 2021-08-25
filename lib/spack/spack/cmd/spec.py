@@ -5,9 +5,9 @@
 
 from __future__ import print_function
 
-import contextlib
 import sys
 
+import llnl.util.lang as lang
 import llnl.util.tty as tty
 
 import spack
@@ -53,14 +53,6 @@ for further documentation regarding the spec syntax, see:
     arguments.add_common_arguments(subparser, ['specs'])
 
 
-@contextlib.contextmanager
-def nullcontext():
-    """Empty context manager.
-    TODO: replace with contextlib.nullcontext() if we ever require python 3.7.
-    """
-    yield
-
-
 def spec(parser, args):
     name_fmt = '{namespace}.{name}' if args.namespaces else '{name}'
     fmt = '{@version}{%compiler}{compiler_flags}{variants}{arch=architecture}'
@@ -75,7 +67,7 @@ def spec(parser, args):
 
     # use a read transaction if we are getting install status for every
     # spec in the DAG.  This avoids repeatedly querying the DB.
-    tree_context = nullcontext
+    tree_context = lang.nullcontext
     if args.install_status:
         tree_context = spack.store.db.read_transaction
 

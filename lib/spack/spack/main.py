@@ -448,6 +448,9 @@ def make_argument_parser(**kwargs):
         '-m', '--mock', action='store_true',
         help="use mock packages instead of real ones")
     parser.add_argument(
+        '-b', '--bootstrap', action='store_true',
+        help="use bootstrap configuration (bootstrap store, config, externals)")
+    parser.add_argument(
         '-p', '--profile', action='store_true', dest='spack_profile',
         help="profile execution using cProfile")
     parser.add_argument(
@@ -871,16 +874,23 @@ def _main(argv=None):
     # many operations will fail without a working directory.
     set_working_dir()
 
+    # set up a bootstrap context, if asked
+    bootstrap_context = llnl.util.lang.nullcontext()
+    if args.bootstrap:
+        import spack.bootstrap as bootstrap  # avoid circular imports
+        bootstrap_context = bootstrap.ensure_bootstrap_configuration()
+
     # now we can actually execute the command.
-    if args.spack_profile or args.sorted_profile:
-        _profile_wrapper(command, parser, args, unknown)
-    elif args.pdb:
-        import pdb
-        pdb.runctx('_invoke_command(command, parser, args, unknown)',
-                   globals(), locals())
-        return 0
-    else:
-        return _invoke_command(command, parser, args, unknown)
+    with bootstrap_context:
+        if args.spack_profile or args.sorted_profile:
+            _profile_wrapper(command, parser, args, unknown)
+        elif args.pdb:
+            import pdb
+            pdb.runctx('_invoke_command(command, parser, args, unknown)',
+                       globals(), locals())
+            return 0
+        else:
+            return _invoke_command(command, parser, args, unknown)
 
 
 def main(argv=None):
